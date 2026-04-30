@@ -1,6 +1,6 @@
 # Research Archive Service (Pro Version)
 
-A high-performance, enterprise-grade research paper search engine built with **Node.js**, **TypeScript**, **PostgreSQL (Neon Cloud)**, and **Elasticsearch**.
+A high-performance, enterprise-grade research paper search engine built with Node.js, TypeScript, PostgreSQL (Neon Cloud), and Elasticsearch.
 
 ![Build Status](https://img.shields.io/badge/Build-Passing-success?style=flat&logo=github)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat&logo=typescript)
@@ -9,51 +9,38 @@ A high-performance, enterprise-grade research paper search engine built with **N
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat&logo=github)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=flat&logo=docker)
 
-## 🚀 Key Features
+## Core Functional Overview
 
-- **Dual-Database Architecture**: PostgreSQL as the Source of Truth and Elasticsearch for high-speed indexing.
-- **Robust Search API**: Supports full-text search, fuzzy matching (typos), and complex filtering.
-- **Advanced Filtering**: Filter by category, language, citations count, and **Price Range**.
-- **Self-Healing Sync**: Automatic dual-write pattern ensures Postgres and Elasticsearch are always consistent.
-- **Circuit Breaker Pattern**: Uses Opossum to prevent system failure during high load or ES downtime.
-- **Visual Analytics**: Integrated **Kibana** dashboard for real-time data visualization.
-- **Type Safety**: End-to-end TypeScript with Zod request validation.
+### What It Does
+The Research Archive Service provides a centralized platform for indexing, storing, and retrieving academic research papers with sub-millisecond precision. It allows users to perform complex full-text searches across large datasets, handle typographical errors through fuzzy matching, and filter results by metadata such as category, publication date, citation metrics, and financial pricing. The system is designed to provide a "Google-like" search experience for specialized academic content.
 
-## 🏗️ Architecture Deep Dive
+### How It Works
+The system operates as a distributed service that synchronizes data across a relational database and an inverted-index search engine. When a paper is submitted, the application first commits the record to a PostgreSQL instance on Neon Cloud to ensure ACID-compliant persistence. Simultaneously, the record is pushed to an Elasticsearch cluster where it is analyzed and indexed. The backend utilizes a service-oriented architecture to orchestrate these writes, ensuring that any discrepancies between the two data stores are minimized through strict error handling and transactional logic.
 
-This system implements the **Polyglot Persistence** pattern to leverage the strengths of different database technologies:
+### Why It Was Built
+This architecture was selected to solve the "Search vs. Scale" problem inherent in traditional relational databases. While PostgreSQL is excellent for maintaining relationships and data integrity, it is not optimized for complex, high-speed text retrieval. By offloading the search burden to Elasticsearch, the system maintains high performance even as the dataset grows into the millions. The inclusion of a Circuit Breaker pattern ensures that the application remains resilient; if the search engine becomes unavailable, the primary database remains functional, preventing total system downtime.
 
-### 1. The Source of Truth (PostgreSQL)
-All research paper data is stored in a relational PostgreSQL database hosted on Neon Cloud. Using **Prisma ORM**, we ensure strict schema enforcement and data integrity. This layer is responsible for the permanent storage of all academic records and metadata.
+## Key Technical Implementation Details
 
-### 2. The Search Layer (Elasticsearch)
-Search queries are offloaded to Elasticsearch, a distributed search engine that uses an inverted index. This allows for:
-- **Fuzzy Matching**: Handling user typos gracefully.
-- **Relevance Scoring**: Ranking papers based on keyword frequency and field weights (e.g., Title has a higher weight than Abstract).
-- **Scalability**: Decoupling search from the primary database allows for sub-millisecond response times even with millions of records.
+- **Polyglot Persistence**: Leveraging PostgreSQL for relational integrity and Elasticsearch for full-text search capabilities.
+- **Service Orchestration**: A clean separation of concerns where the service layer manages the synchronization between disparate data sources.
+- **Zero-Downtime Indexing**: Utilizing the Production Alias Pattern to allow for index maintenance and mapping updates without service interruption.
+- **Data Observability**: Integrated Kibana dashboards provide real-time visibility into index health, document distribution, and search performance.
 
-### 3. The Orchestration Layer (Node.js)
-The backend service coordinates data flow. Every "Write" operation follows a "Save-then-Index" strategy: data is committed to PostgreSQL first, and only upon success is it indexed into Elasticsearch. This ensures that the search engine never contains orphaned data that doesn't exist in the primary database.
+## Technology Stack
 
-## 🧠 Key Technical Challenges Solved
+- **Runtime**: Node.js with TypeScript
+- **Framework**: Express.js
+- **ORM**: Prisma
+- **Primary Storage**: PostgreSQL (Neon Cloud)
+- **Search & Analytics**: Elasticsearch & Kibana 8.12
+- **Resilience**: Opossum Circuit Breaker
+- **Logging**: Winston Structured Logging
 
-### Handling Dual-Write Consistency
-**Problem**: Writing to two databases (Postgres and ES) can lead to data drift if one write fails and the other succeeds.
-**Solution**: Implemented a transactional orchestration logic in the `PaperService`. The system ensures the PostgreSQL write is confirmed before attempting the Elasticsearch index. If the index fails, it is caught and logged for manual reconciliation or background retry (Roadmap feature).
+## Setup and Installation
 
-### Zero-Downtime Reindexing
-**Problem**: Updating index mappings normally requires taking the search service offline.
-**Solution**: Implemented a **Production Alias Pattern**. The application communicates with an alias (`research_papers`) rather than a concrete index. This allows us to create a new index (`v2`), reindex data in the background, and switch the alias pointer instantly with zero downtime.
-
-## 📋 Prerequisites
-
-- Node.js (v18+)
-- Docker Desktop (for Elasticsearch & Kibana)
-- A Neon Cloud PostgreSQL account
-
-## ⚙️ Setup Instructions
-
-1. **Environment Config**:
+1. **Environment Configuration**:
+   Create a `.env` file in the root with the following variables:
    ```env
    PORT=3100
    DATABASE_URL=your_neon_postgres_url
@@ -61,7 +48,7 @@ The backend service coordinates data flow. Every "Write" operation follows a "Sa
    ELASTICSEARCH_INDEX=research_papers
    ```
 
-2. **Start Infrastructure & Seed**:
+2. **Infrastructure Initialization**:
    ```bash
    cd backend
    docker-compose up -d
@@ -69,10 +56,19 @@ The backend service coordinates data flow. Every "Write" operation follows a "Sa
    npm run seed
    ```
 
-3. **Run Server**:
+3. **Execution**:
    ```bash
    npm run dev
    ```
 
+## API Documentation
+
+### Search Endpoint
+`GET /api/papers/search`
+
+Provides comprehensive search capabilities including fuzzy matching, range filtering (price and citations), and multi-field sorting.
+
+**Parameters**: `q`, `category`, `minPrice`, `maxPrice`, `minCitations`, `sortBy`, `sortOrder`.
+
 ---
-Built with professional engineering standards by Antigravity
+Final Production Release
