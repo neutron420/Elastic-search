@@ -4,9 +4,7 @@ import type { IResearchPaper } from '../interfaces/paper.interface';
 import logger from '../utils/logger';
 
 export class PaperService {
-  /**
-   * Create a new research paper in PostgreSQL and index it in Elasticsearch
-   */
+
   static async createPaper(data: IResearchPaper) {
     try {
       // 1. Save to PostgreSQL (Source of Truth)
@@ -30,7 +28,7 @@ export class PaperService {
       // Use the Postgres ID to keep them synced
       await ElasticsearchService.indexDocument({
         ...data,
-        id: paper.id, // Ensure ES uses the same ID as PG
+        id: paper.id, 
       } as any);
 
       logger.info(`Paper created and indexed: ${paper.id}`);
@@ -41,9 +39,7 @@ export class PaperService {
     }
   }
 
-  /**
-   * Update a paper in both PG and ES
-   */
+
   static async updatePaper(id: string, data: Partial<IResearchPaper>) {
     try {
       // 1. Update PostgreSQL
@@ -66,9 +62,7 @@ export class PaperService {
     }
   }
 
-  /**
-   * Delete a paper from both PG and ES
-   */
+
   static async deletePaper(id: string) {
     try {
       // 1. Delete from PostgreSQL
@@ -85,10 +79,7 @@ export class PaperService {
     }
   }
 
-  /**
-   * Get a single paper by ID from PostgreSQL
-   */
-  static async getPaperById(id: string) {
+tic async getPaperById(id: string) {
     return await prisma.researchPaper.findUnique({ where: { id } });
   }
 }
