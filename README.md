@@ -1,4 +1,4 @@
-# Research Archive Service (Pro Version)
+# Research Archive Service 
 
 A high-performance, enterprise-grade research paper search engine built with Node.js, TypeScript, PostgreSQL (Neon Cloud), and Elasticsearch.
 
